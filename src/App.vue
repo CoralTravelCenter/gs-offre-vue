@@ -2,8 +2,9 @@
 import { onMounted, ref, reactive, watchEffect } from 'vue';
 import { useIntervalFn } from "@vueuse/core";
 import { gas } from "./components/useful.js";
+import dayjs from "dayjs";
 
-const openedItems = ref(['init']);
+const openedItems = ref(['common-search']);
 
 const cell = ref();
 
@@ -18,7 +19,7 @@ async function doInitSheet() {
 onMounted(() => {
     useIntervalFn(() => {
         gas('pullState').then((result) => Object.assign(sheetState, result));
-    }, 1000);
+    }, 2000);
 
 });
 
@@ -29,6 +30,16 @@ watchEffect(async () => {
     }
 });
 
+function isDisabledDay(dt) {
+    return dayjs(dt).isBefore(dayjs());
+}
+
+const dt_range = ref();
+
+const chartersOnly = ref(true);
+const timeframeType = ref('fluid');
+const timeframeMonthly = ref(true);
+
 </script>
 
 <template>
@@ -36,15 +47,23 @@ watchEffect(async () => {
         <div v-if="isActiveSheetEmpty" class="sheet-init">
             <el-button type="primary" @click="doInitSheet">Init new sheet</el-button>
         </div>
-<!--        <el-collapse v-model="openedItems">-->
-<!--            <el-collapse-item name="init" title="Initialize">-->
-<!--                <div>-->
-<!--                    <el-button type="primary">Setup required structure</el-button>-->
-<!--                </div>-->
-<!--            </el-collapse-item>-->
-<!--        </el-collapse>-->
         <div v-else>
-            <el-date-picker size="small" type="daterange" :teleported="false"></el-date-picker>
+            <el-collapse v-model="openedItems">
+                <el-collapse-item name="common-search" title="Common search params">
+                    <el-divider size="small">Flights</el-divider>
+                    <el-checkbox v-model="chartersOnly" size="small">Charters only</el-checkbox>
+                    <el-divider size="small">Timeframe(s)</el-divider>
+                    <el-radio-group class="fullwidth" v-model="timeframeType" size="small" style="width: 100%;">
+                        <el-radio-button label="Fixed" value="fixed"></el-radio-button>
+                        <el-radio-button label="Fluid" value="fluid"></el-radio-button>
+                    </el-radio-group>
+                    <el-checkbox v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
+                </el-collapse-item>
+            </el-collapse>
+            <el-date-picker size="small" type="daterange" v-model="dt_range"
+                            :clearable="true"
+                            :disabled-date="isDisabledDay"
+                            :teleported="false"></el-date-picker>
         </div>
     </div>
 </template>
@@ -78,6 +97,43 @@ body, #app {
 
     .el-date-editor {
         width: 100% !important;
+    }
+
+    .el-date-range-picker {
+        width: 280px;
+        white-space: nowrap;
+        .el-picker-panel__body {
+            min-width: auto;
+            display: grid;
+        }
+    }
+    .el-date-range-picker__content {
+        width: 100%;
+    }
+    .el-date-table td {
+        padding: 0;
+    }
+    .el-date-range-picker__content.is-left {
+        border: 0;
+        padding-bottom: 0;
+    }
+
+    .el-divider__text {
+        font-size: 12px;
+    }
+    .el-divider--horizontal {
+        margin: 1em 0;
+    }
+
+    .el-radio-group.fullwidth {
+        width: 100%;
+        >.el-radio-button {
+            display: inline-flex;
+            flex: 1;
+            .el-radio-button__inner {
+                flex: 1;
+            }
+        }
     }
 
 }
