@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, ref, reactive, watchEffect } from 'vue';
+import { onMounted, ref, reactive, watchEffect, watch } from 'vue';
 import { useIntervalFn } from "@vueuse/core";
+import { Delete } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
 import dayjs from "dayjs";
 
@@ -40,6 +41,17 @@ const chartersOnly = ref(true);
 const timeframeType = ref('fluid');
 const timeframeMonthly = ref(true);
 
+const commonFluidSince = ref(14);
+const commonFluidUntil = ref(14 + 30);
+watch(commonFluidSince, (newValue) => {
+    if (newValue > commonFluidUntil.value) {
+        commonFluidUntil.value = newValue;
+    }
+});
+
+const isCommonFixedNamed = ref(false);
+const commonFixedName = ref('');
+
 </script>
 
 <template>
@@ -57,13 +69,26 @@ const timeframeMonthly = ref(true);
                         <el-radio-button label="Fixed" value="fixed"></el-radio-button>
                         <el-radio-button label="Fluid" value="fluid"></el-radio-button>
                     </el-radio-group>
+                    <div class="common-fixed" v-if="timeframeType === 'fixed'">
+                        <el-checkbox v-model="isCommonFixedNamed" size="small">Named</el-checkbox>
+                        <div class="fixed-item-grid">
+                            <el-input class="name-input" v-if="isCommonFixedNamed" v-model="commonFixedName" size="small">
+                                <template #prepend>Name</template>
+                            </el-input>
+                            <el-date-picker size="small" type="daterange" v-model="dt_range" class="range-picker"
+                                            :clearable="true"
+                                            :disabled-date="isDisabledDay"
+                                            :teleported="false"></el-date-picker>
+                            <el-button class="delete-button" size="small" :icon="Delete"></el-button>
+                        </div>
+                    </div>
+                    <div class="common-fluid" v-if="timeframeType === 'fluid'">
+                        <el-input-number size="small" v-model="commonFluidSince" :min="1" :max="100"></el-input-number>
+                        <el-input-number size="small" v-model="commonFluidUntil" :min="commonFluidSince" :max="commonFluidSince + 100"></el-input-number>
+                    </div>
                     <el-checkbox v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
                 </el-collapse-item>
             </el-collapse>
-            <el-date-picker size="small" type="daterange" v-model="dt_range"
-                            :clearable="true"
-                            :disabled-date="isDisabledDay"
-                            :teleported="false"></el-date-picker>
         </div>
     </div>
 </template>
@@ -133,6 +158,36 @@ body, #app {
             .el-radio-button__inner {
                 flex: 1;
             }
+        }
+    }
+
+    .common-fixed {
+        padding: 1em 0;
+
+    }
+
+    .fixed-item-grid {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: .5em;
+        .name-input {
+            grid-area: 1 / 1;
+        }
+        .range-picker {
+            grid-area: auto / 1;
+        }
+        .delete-button {
+            grid-area: 1 / -2 / -1 / -1;
+        }
+    }
+
+    .common-fluid {
+        width: 100%;
+        display: flex;
+        gap: 1em;
+        padding: 1em;
+        >* {
+            flex: 1;
         }
     }
 

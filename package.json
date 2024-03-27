@@ -13,6 +13,7 @@
         "gpush": "clasp push -P ./appsscript"
     },
     "dependencies": {
+        "@element-plus/icons-vue": "^2.3.1",
         "@vueuse/core": "^10.9.0",
         "dayjs": "^1.11.10",
         "element-plus": "^2.6.1",
