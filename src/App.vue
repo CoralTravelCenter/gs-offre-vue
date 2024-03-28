@@ -1,13 +1,11 @@
 <script setup>
 import { onMounted, ref, reactive, watchEffect, watch } from 'vue';
 import { useIntervalFn } from "@vueuse/core";
-import { Delete } from '@element-plus/icons-vue';
+import { Delete, Plus } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
 import dayjs from "dayjs";
 
 const openedItems = ref(['common-search']);
-
-const cell = ref();
 
 const sheetState = reactive({});
 const isActiveSheetEmpty = ref();
@@ -35,8 +33,6 @@ function isDisabledDay(dt) {
     return dayjs(dt).isBefore(dayjs());
 }
 
-const dt_range = ref();
-
 const chartersOnly = ref(true);
 const timeframeType = ref('fluid');
 const timeframeMonthly = ref(true);
@@ -50,7 +46,14 @@ watch(commonFluidSince, (newValue) => {
 });
 
 const isCommonFixedNamed = ref(false);
-const commonFixedName = ref('');
+
+const commonFixedItems = reactive([{
+    name: '',
+    timeframe: []
+}]);
+function moreFixedTimeframe() {
+    commonFixedItems.push({name: '', timeframe: []})
+}
 
 </script>
 
@@ -71,22 +74,25 @@ const commonFixedName = ref('');
                     </el-radio-group>
                     <div class="common-fixed" v-if="timeframeType === 'fixed'">
                         <el-checkbox v-model="isCommonFixedNamed" size="small">Named</el-checkbox>
-                        <div class="fixed-item-grid">
-                            <el-input class="name-input" v-if="isCommonFixedNamed" v-model="commonFixedName" size="small">
-                                <template #prepend>Name</template>
-                            </el-input>
-                            <el-date-picker size="small" type="daterange" v-model="dt_range" class="range-picker"
-                                            :clearable="true"
-                                            :disabled-date="isDisabledDay"
-                                            :teleported="false"></el-date-picker>
-                            <el-button class="delete-button" size="small" :icon="Delete"></el-button>
+                        <div v-for="(item, idx) in commonFixedItems" class="fixed-item-flex">
+                            <div class="name-date-picker">
+                                <el-input class="name-input" v-if="isCommonFixedNamed" v-model="item.name" size="small">
+                                    <template #prepend>Name</template>
+                                </el-input>
+                                <el-date-picker size="small" type="daterange" v-model="item.timeframe" class="range-picker"
+                                                :clearable="true"
+                                                :disabled-date="isDisabledDay"
+                                                :teleported="false"></el-date-picker>
+                            </div>
+                            <el-button v-if="commonFixedItems.length > 1" class="delete-button" size="small" :icon="Delete" @click="commonFixedItems.splice(idx, 1)"></el-button>
                         </div>
+                        <el-button class="more-timeframes" :icon="Plus" size="small" @click="moreFixedTimeframe"></el-button>
                     </div>
                     <div class="common-fluid" v-if="timeframeType === 'fluid'">
                         <el-input-number size="small" v-model="commonFluidSince" :min="1" :max="100"></el-input-number>
                         <el-input-number size="small" v-model="commonFluidUntil" :min="commonFluidSince" :max="commonFluidSince + 100"></el-input-number>
                     </div>
-                    <el-checkbox v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
+                    <el-checkbox v-if="!isCommonFixedNamed" v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
                 </el-collapse-item>
             </el-collapse>
         </div>
@@ -162,23 +168,34 @@ body, #app {
     }
 
     .common-fixed {
+        display: flex;
+        flex-direction: column;
+        gap: .5em;
         padding: 1em 0;
-
     }
 
-    .fixed-item-grid {
-        display: grid;
-        grid-template-columns: 1fr auto;
+    .fixed-item-flex {
+        width: 100%;
+        display: flex;
         gap: .5em;
-        .name-input {
-            grid-area: 1 / 1;
-        }
-        .range-picker {
-            grid-area: auto / 1;
+        .name-date-picker {
+            display: flex;
+            flex-direction: column;
+            gap: .5em;
+            .name-input {
+
+            }
+            .range-picker {
+
+            }
         }
         .delete-button {
-            grid-area: 1 / -2 / -1 / -1;
+            height: unset;
         }
+    }
+
+    .more-timeframes {
+        align-self: flex-end;
     }
 
     .common-fluid {
