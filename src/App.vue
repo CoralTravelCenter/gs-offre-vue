@@ -4,6 +4,7 @@ import { useIntervalFn } from "@vueuse/core";
 import { Delete, Plus } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
 import dayjs from "dayjs";
+import NightsSelector from "./components/NightsSelector.vue";
 
 const openedItems = ref(['common-search']);
 
@@ -37,8 +38,8 @@ const chartersOnly = ref(true);
 const timeframeType = ref('fluid');
 const timeframeMonthly = ref(true);
 
-const commonFluidSince = ref(14);
-const commonFluidUntil = ref(14 + 30);
+const commonFluidSince = ref(15);
+const commonFluidUntil = ref(15 + 30);
 watch(commonFluidSince, (newValue) => {
     if (newValue > commonFluidUntil.value) {
         commonFluidUntil.value = newValue;
@@ -47,13 +48,20 @@ watch(commonFluidSince, (newValue) => {
 
 const isCommonFixedNamed = ref(false);
 
-const commonFixedItems = reactive([{
-    name: '',
-    timeframe: []
-}]);
+const commonFixedItems = reactive([{ name: '', timeframe: [] }]);
 function moreFixedTimeframe() {
     commonFixedItems.push({name: '', timeframe: []})
 }
+
+const commonNightsSelected = ref([7]);
+
+const commonGroupByLocation = ref('areas');
+const commonUseAllOffersButton = ref(true);
+const commonAllOffersButtonLabel = ref('Все отели');
+
+const commonUsePreferRegion = ref(false);
+const commonPreferRegion = ref();
+const commonOfferPrice = ref('');
 
 </script>
 
@@ -65,35 +73,87 @@ function moreFixedTimeframe() {
         <div v-else>
             <el-collapse v-model="openedItems">
                 <el-collapse-item name="common-search" title="Common search params">
+
                     <el-divider size="small">Flights</el-divider>
                     <el-checkbox v-model="chartersOnly" size="small">Charters only</el-checkbox>
+
                     <el-divider size="small">Timeframe(s)</el-divider>
                     <el-radio-group class="fullwidth" v-model="timeframeType" size="small" style="width: 100%;">
                         <el-radio-button label="Fixed" value="fixed"></el-radio-button>
                         <el-radio-button label="Fluid" value="fluid"></el-radio-button>
                     </el-radio-group>
-                    <div class="common-fixed" v-if="timeframeType === 'fixed'">
+                    <div class="fields-stack" v-if="timeframeType === 'fixed'">
                         <el-checkbox v-model="isCommonFixedNamed" size="small">Named</el-checkbox>
                         <div v-for="(item, idx) in commonFixedItems" class="fixed-item-flex">
                             <div class="name-date-picker">
                                 <el-input class="name-input" v-if="isCommonFixedNamed" v-model="item.name" size="small">
                                     <template #prepend>Name</template>
                                 </el-input>
-                                <el-date-picker size="small" type="daterange" v-model="item.timeframe" class="range-picker"
+                                <el-date-picker size="small" type="daterange" v-model="item.timeframe"
+                                                class="range-picker"
                                                 :clearable="true"
                                                 :disabled-date="isDisabledDay"
                                                 :teleported="false"></el-date-picker>
                             </div>
-                            <el-button v-if="commonFixedItems.length > 1" class="delete-button" size="small" :icon="Delete" @click="commonFixedItems.splice(idx, 1)"></el-button>
+                            <el-button v-if="commonFixedItems.length > 1" class="delete-button" size="small"
+                                       :icon="Delete" @click="commonFixedItems.splice(idx, 1)"></el-button>
                         </div>
-                        <el-button class="more-timeframes" :icon="Plus" size="small" @click="moreFixedTimeframe"></el-button>
+                        <el-button class="more-timeframes" :icon="Plus" size="small"
+                                   @click="moreFixedTimeframe"></el-button>
                     </div>
                     <div class="common-fluid" v-if="timeframeType === 'fluid'">
                         <el-input-number size="small" v-model="commonFluidSince" :min="1" :max="100"></el-input-number>
                         <el-input-number size="small" v-model="commonFluidUntil" :min="commonFluidSince" :max="commonFluidSince + 100"></el-input-number>
                     </div>
                     <el-checkbox v-if="!isCommonFixedNamed" v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
+
+                    <el-divider size="small">Stay nights</el-divider>
+                    <NightsSelector v-model="commonNightsSelected"/>
                 </el-collapse-item>
+
+                <el-collapse-item name="interface-options" title="Interface options">
+                    <div class="fields-stack">
+                        <el-input class="location-grouping-combo" type="text" size="small">
+                            <template #prepend>Group by location</template>
+                            <template #append>
+                                <el-select v-model="commonGroupByLocation" size="small">
+                                    <el-option label="Country" value="countries"></el-option>
+                                    <el-option label="Region" value="regions"></el-option>
+                                    <el-option label="Area" value="areas"></el-option>
+                                    <el-option label="Place" value="places"></el-option>
+                                </el-select>
+                            </template>
+                        </el-input>
+                        <el-input size="small" v-model="commonAllOffersButtonLabel" :disabled="!commonUseAllOffersButton">
+                            <template #prepend>
+                                <el-checkbox v-model="commonUseAllOffersButton" size="small">"All offers" button</el-checkbox>
+                            </template>
+                        </el-input>
+                        <el-input size="small" v-model="commonPreferRegion" :disabled="!commonUsePreferRegion">
+                            <template #prepend>
+                                <el-checkbox v-model="commonUsePreferRegion" size="small">Prefer region</el-checkbox>
+                            </template>
+                        </el-input>
+                        <el-input class="location-grouping-combo" type="text" size="small">
+                            <template #prepend>Display offer price</template>
+                            <template #append>
+                                <el-select v-model="commonOfferPrice" size="small">
+                                    <el-option label="as is" value=""></el-option>
+                                    <el-option label="per night" value="per-night"></el-option>
+                                    <el-option label="per person" value="per-person"></el-option>
+                                </el-select>
+                            </template>
+                        </el-input>
+                    </div>
+                </el-collapse-item>
+
+                <el-collapse-item name="hotel-search" title="Hotel(s) search params">
+                    <el-divider size="small">Timeframe(s)</el-divider>
+
+                    <el-divider size="small">Stay nights</el-divider>
+
+                </el-collapse-item>
+
             </el-collapse>
         </div>
     </div>
@@ -102,12 +162,14 @@ function moreFixedTimeframe() {
 <style lang="less">
 :root {
     height: -webkit-fill-available;
+    -webkit-font-smoothing: antialiased;
     * {
         box-sizing: border-box;
     }
 }
 body, #app {
     height: -webkit-fill-available;
+    font-family: sans-serif;
 }
 </style>
 
@@ -117,7 +179,6 @@ body, #app {
     height: -webkit-fill-available;
     display: flex;
     flex-direction: column;
-    font-family: sans-serif;
 
     .sheet-init {
         flex-grow: 1;
@@ -133,17 +194,21 @@ body, #app {
     .el-date-range-picker {
         width: 280px;
         white-space: nowrap;
+
         .el-picker-panel__body {
             min-width: auto;
             display: grid;
         }
     }
+
     .el-date-range-picker__content {
         width: 100%;
     }
+
     .el-date-table td {
         padding: 0;
     }
+
     .el-date-range-picker__content.is-left {
         border: 0;
         padding-bottom: 0;
@@ -152,22 +217,29 @@ body, #app {
     .el-divider__text {
         font-size: 12px;
     }
+
     .el-divider--horizontal {
         margin: 1em 0;
     }
 
     .el-radio-group.fullwidth {
         width: 100%;
-        >.el-radio-button {
+
+        > .el-radio-button {
             display: inline-flex;
             flex: 1;
+
             .el-radio-button__inner {
                 flex: 1;
             }
         }
     }
 
-    .common-fixed {
+    .el-input-group__prepend {
+        padding: 0 .7em;
+    }
+
+    .fields-stack {
         display: flex;
         flex-direction: column;
         gap: .5em;
@@ -178,17 +250,21 @@ body, #app {
         width: 100%;
         display: flex;
         gap: .5em;
+
         .name-date-picker {
             display: flex;
             flex-direction: column;
             gap: .5em;
+
             .name-input {
 
             }
+
             .range-picker {
 
             }
         }
+
         .delete-button {
             height: unset;
         }
@@ -203,8 +279,21 @@ body, #app {
         display: flex;
         gap: 1em;
         padding: 1em;
-        >* {
+
+        > * {
             flex: 1;
+        }
+    }
+
+    .location-grouping-combo {
+        .el-input__wrapper {
+            display: none;
+        }
+
+        .el-input-group__append {
+            background-color: unset;
+            flex: 1;
+            padding: 0;
         }
     }
 
