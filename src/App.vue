@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, reactive, watchEffect, watch } from 'vue';
+import { onMounted, ref, reactive, watchEffect, watch, computed } from 'vue';
 import { useIntervalFn } from "@vueuse/core";
 import { Delete, Plus } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
@@ -28,6 +28,17 @@ watchEffect(async () => {
     if (sheetState.activeSheetName) {
         isActiveSheetEmpty.value = await gas('isActiveSheetEmpty');
     }
+});
+
+const isTimeframeColumnSelected = computed(() => {
+    return sheetState.selectionHeaders?.includes('timeframe');
+});
+const isNightsColumnSelected = computed(() => {
+    return sheetState.selectionHeaders?.includes('nights');
+});
+
+watchEffect(() => {
+    console.log('+++ selectionHeaders: %o', sheetState.selectionHeaders);
 });
 
 function isDisabledDay(dt) {
@@ -147,10 +158,10 @@ const commonOfferPrice = ref('');
                     </div>
                 </el-collapse-item>
 
-                <el-collapse-item name="hotel-search" title="Hotel(s) search params">
-                    <el-divider size="small">Timeframe(s)</el-divider>
+                <el-collapse-item v-if="isTimeframeColumnSelected || isNightsColumnSelected" name="hotel-search" title="Hotel(s) search params">
+                    <el-divider v-if="isTimeframeColumnSelected" size="small">Timeframe(s)</el-divider>
 
-                    <el-divider size="small">Stay nights</el-divider>
+                    <el-divider v-if="isNightsColumnSelected" size="small">Stay nights</el-divider>
 
                 </el-collapse-item>
 

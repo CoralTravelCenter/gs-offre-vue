@@ -41,12 +41,22 @@ function openInterface() {
     SpreadsheetApp.getUi().showSidebar(sidebar_html);
 }
 
-
+function getHeadersInRange(range) {
+    const sheet = range.getSheet();
+    const headers = [];
+    for (let col = range.getColumn(); col <= range.getLastColumn(); col++) {
+        headers.push(sheet.getRange(1, col, 1, 1).getValue());
+    }
+    return headers;
+}
 function pullState() {
+    const activeSheet = SpreadsheetApp.getActiveSheet();
+    const activeRange = activeSheet.getActiveRange();
     return {
-        activeSheetName: SpreadsheetApp.getActiveSheet().getName(),
-        selectionRange: 'selectionRange',
-        activeCell : 'activeCell'
+        activeSheetName: activeSheet.getName(),
+        selectionRange:  activeRange.getA1Notation(),
+        selectionHeaders: getHeadersInRange(activeRange),
+        activeCell :     'activeCell'
     };
 }
 
