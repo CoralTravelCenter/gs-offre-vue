@@ -1,10 +1,11 @@
 <script setup>
 import { onMounted, ref, reactive, watchEffect, watch, computed } from 'vue';
 import { useIntervalFn } from "@vueuse/core";
-import { Delete, Plus } from '@element-plus/icons-vue';
+import { CircleCheckFilled, Delete, Plus, WarnTriangleFilled } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
 import dayjs from "dayjs";
 import NightsSelector from "./components/NightsSelector.vue";
+import TimeframeSelector from "./components/TimeframeSelector.vue";
 
 const openedItems = ref(['common-search']);
 
@@ -74,6 +75,26 @@ const commonUsePreferRegion = ref(false);
 const commonPreferRegion = ref();
 const commonOfferPrice = ref('');
 
+
+const commonTimeframe = ref(null);
+const isCommonTimeframeValid = computed(() => {
+    return !!commonTimeframe.value;
+});
+
+const isCommonNightsValid = computed(() => {
+    return !!commonNightsSelected.value?.length;
+});
+
+const isInterfaceOptionsValid = computed(() => {
+    const bad_all_offers_setup = commonUseAllOffersButton.value && !commonAllOffersButtonLabel.value;
+    const bad_prefer_region_setup = commonUsePreferRegion.value && !commonPreferRegion.value;
+    return !bad_all_offers_setup && !bad_prefer_region_setup;
+});
+
+watchEffect(() => {
+    console.log('+++ commonTimeframe: %o', commonTimeframe.value);
+});
+
 </script>
 
 <template>
@@ -83,46 +104,34 @@ const commonOfferPrice = ref('');
         </div>
         <div v-else>
             <el-collapse v-model="openedItems">
-                <el-collapse-item name="common-search" title="Common search params">
+                <el-collapse-item name="common-search">
+
+                    <template #title>
+                        <el-icon size="large" :color="isCommonTimeframeValid && isCommonNightsValid ? 'var(--el-color-success)' : 'var(--el-color-danger)'">
+                            <CircleCheckFilled v-if="isCommonTimeframeValid && isCommonNightsValid" />
+                            <WarnTriangleFilled v-else />
+                        </el-icon>
+                        <el-text>Common search params</el-text>
+                    </template>
 
                     <el-divider size="small">Flights</el-divider>
                     <el-checkbox v-model="chartersOnly" size="small">Charters only</el-checkbox>
 
                     <el-divider size="small">Timeframe(s)</el-divider>
-                    <el-radio-group class="fullwidth" v-model="timeframeType" size="small" style="width: 100%;">
-                        <el-radio-button label="Fixed" value="fixed"></el-radio-button>
-                        <el-radio-button label="Fluid" value="fluid"></el-radio-button>
-                    </el-radio-group>
-                    <div class="fields-stack" v-if="timeframeType === 'fixed'">
-                        <el-checkbox v-model="isCommonFixedNamed" size="small">Named</el-checkbox>
-                        <div v-for="(item, idx) in commonFixedItems" class="fixed-item-flex">
-                            <div class="name-date-picker">
-                                <el-input class="name-input" v-if="isCommonFixedNamed" v-model="item.name" size="small">
-                                    <template #prepend>Name</template>
-                                </el-input>
-                                <el-date-picker size="small" type="daterange" v-model="item.timeframe"
-                                                class="range-picker"
-                                                :clearable="true"
-                                                :disabled-date="isDisabledDay"
-                                                :teleported="false"></el-date-picker>
-                            </div>
-                            <el-button v-if="commonFixedItems.length > 1" class="delete-button" size="small"
-                                       :icon="Delete" @click="commonFixedItems.splice(idx, 1)"></el-button>
-                        </div>
-                        <el-button class="more-timeframes" :icon="Plus" size="small"
-                                   @click="moreFixedTimeframe"></el-button>
-                    </div>
-                    <div class="common-fluid" v-if="timeframeType === 'fluid'">
-                        <el-input-number size="small" v-model="commonFluidSince" :min="1" :max="100"></el-input-number>
-                        <el-input-number size="small" v-model="commonFluidUntil" :min="commonFluidSince" :max="commonFluidSince + 100"></el-input-number>
-                    </div>
-                    <el-checkbox v-if="!isCommonFixedNamed" v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
+                    <TimeframeSelector v-model="commonTimeframe"></TimeframeSelector>
 
                     <el-divider size="small">Stay nights</el-divider>
                     <NightsSelector v-model="commonNightsSelected"/>
                 </el-collapse-item>
 
-                <el-collapse-item name="interface-options" title="Interface options">
+                <el-collapse-item name="interface-options">
+                    <template #title>
+                        <el-icon size="large" :color="isInterfaceOptionsValid ? 'var(--el-color-success)' : 'var(--el-color-danger)'">
+                            <CircleCheckFilled v-if="isInterfaceOptionsValid" />
+                            <WarnTriangleFilled v-else />
+                        </el-icon>
+                        <el-text>Interface options</el-text>
+                    </template>
                     <div class="fields-stack">
                         <el-input class="location-grouping-combo" type="text" size="small">
                             <template #prepend>Group by location</template>
@@ -197,6 +206,11 @@ body, #app {
         place-content: center;
     }
 
+    .el-collapse-item__header {
+        .el-icon {
+            margin-right: .3em;
+        }
+    }
 
     .el-date-editor {
         width: 100% !important;
