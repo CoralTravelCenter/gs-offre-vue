@@ -52,11 +52,18 @@ function getHeadersInRange(range) {
 function pullState() {
     const activeSheet = SpreadsheetApp.getActiveSheet();
     const activeRange = activeSheet.getActiveRange();
+    const selectionHeaders = getHeadersInRange(activeRange);
+    if (selectionHeaders.includes('timeframe')) {
+
+    }
+    if (selectionHeaders.includes('nights')) {
+
+    }
     return {
-        activeSheetName: activeSheet.getName(),
-        selectionRange:  activeRange.getA1Notation(),
-        selectionHeaders: getHeadersInRange(activeRange),
-        activeCell :     'activeCell'
+        activeSheetName:  activeSheet.getName(),
+        selectionRange:   activeRange.getA1Notation(),
+        selectionHeaders,
+        // activeCell :      'activeCell'
     };
 }
 

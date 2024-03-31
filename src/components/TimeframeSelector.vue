@@ -42,7 +42,11 @@ watchEffect(() => {
     if (isTimeframeSetupValid.value) {
         emit('update:modelValue', {
             timeframeType: timeframeType.value,
-            isFixedNamed: isFixedNamed.value
+            isFixedNamed: isFixedNamed.value,
+            fixedItems,
+            timeframeMonthly: timeframeMonthly.value,
+            fluidSince: fluidSince.value,
+            fluidUntil: fluidUntil.value
         });
     } else {
         emit('update:modelValue', null);
