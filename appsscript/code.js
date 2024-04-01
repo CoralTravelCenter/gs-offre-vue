@@ -49,12 +49,36 @@ function getHeadersInRange(range) {
     }
     return headers;
 }
+
+// Number.prototype.isBetween = function (min, max) {
+//     return this >= min && this <= max;
+// };
+
+function intersectDataRanges(sheet, ...ranges) {
+    return ranges.reduce((intersection, range) => {
+        if (intersection) {
+            const iRangeRowStart = Math.max(intersection.getRow(), range.getRow());
+            const iRangeRowEnd = Math.min(intersection.getLastRow(), range.getLastRow());
+            const iRangeColumnStart = Math.max(intersection.getColumn(), range.getColumn());
+            const iRangeColumnEnd = Math.min(intersection.getLastColumn(), range.getLastColumn());
+            let intersection_range;
+            try {
+                intersection_range = sheet.getRange(iRangeRowStart, iRangeColumnStart, iRangeRowEnd - iRangeRowStart + 1, iRangeColumnEnd - iRangeColumnStart + 1);
+            } catch (ex) {}
+            return intersection_range;
+        }
+    }, sheet.getDataRange());
+}
+
 function pullState() {
     const activeSheet = SpreadsheetApp.getActiveSheet();
     const activeRange = activeSheet.getActiveRange();
     const selectionHeaders = getHeadersInRange(activeRange);
-    if (selectionHeaders.includes('timeframe')) {
-
+    let timeframeValues, timeframeRange;
+    const timeframeColumnIdx = selectionHeaders.indexOf('timeframe');
+    if (~timeframeColumnIdx) {
+        timeframeRange = intersectDataRanges(activeSheet, activeRange, activeSheet.getRange(2, timeframeColumnIdx + activeRange.getColumn(), activeSheet.getLastRow() - 1, 1));
+        timeframeValues = timeframeRange?.getValues()[0];
     }
     if (selectionHeaders.includes('nights')) {
 
@@ -63,6 +87,8 @@ function pullState() {
         activeSheetName:  activeSheet.getName(),
         selectionRange:   activeRange.getA1Notation(),
         selectionHeaders,
+        timeframeRange: timeframeRange?.getA1Notation(),
+        timeframeValues,
         // activeCell :      'activeCell'
     };
 }

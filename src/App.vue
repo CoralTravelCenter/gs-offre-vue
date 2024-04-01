@@ -32,14 +32,33 @@ watchEffect(async () => {
 });
 
 const isTimeframeColumnSelected = computed(() => {
-    return sheetState.selectionHeaders?.includes('timeframe');
+    // return sheetState.selectionHeaders?.includes('timeframe');
+    return !!sheetState.timeframeRange;
 });
 const isNightsColumnSelected = computed(() => {
     return sheetState.selectionHeaders?.includes('nights');
 });
 
 watchEffect(() => {
-    console.log('+++ selectionHeaders: %o', sheetState.selectionHeaders);
+    // console.log('+++ selectionHeaders: %o', sheetState.selectionHeaders);
+});
+
+const hotelTimeframe = ref(null);
+
+watchEffect(() => {
+    console.log('*** sheetState.timeframeRange: %o', sheetState.timeframeRange);
+    console.log('*** sheetState.timeframeValues: %o', sheetState.timeframeValues);
+    if (sheetState.timeframeValues?.length) {
+        const timeframe_set = new Set(sheetState.timeframeValues);
+        if (timeframe_set.size === 1) {
+            console.log(sheetState.timeframeValues.at(0));
+            hotelTimeframe.value = JSON.parse(sheetState.timeframeValues.at(0) || null);
+        } else {
+            hotelTimeframe.value = null;
+        }
+    } else {
+        hotelTimeframe.value = null;
+    }
 });
 
 function isDisabledDay(dt) {
@@ -169,6 +188,7 @@ watchEffect(() => {
 
                 <el-collapse-item v-if="isTimeframeColumnSelected || isNightsColumnSelected" name="hotel-search" title="Hotel(s) search params">
                     <el-divider v-if="isTimeframeColumnSelected" size="small">Timeframe(s)</el-divider>
+                    <TimeframeSelector v-model="hotelTimeframe"></TimeframeSelector>
 
                     <el-divider v-if="isNightsColumnSelected" size="small">Stay nights</el-divider>
 
