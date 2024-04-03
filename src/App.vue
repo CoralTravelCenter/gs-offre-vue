@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref, reactive, watchEffect, watch, computed } from 'vue';
 import { useIntervalFn } from "@vueuse/core";
-import { CircleCheckFilled, Delete, Plus, WarnTriangleFilled } from '@element-plus/icons-vue';
+import { CircleCheckFilled, WarnTriangleFilled } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
 import dayjs from "dayjs";
 import NightsSelector from "./components/NightsSelector.vue";
