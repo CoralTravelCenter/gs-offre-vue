@@ -6,6 +6,6 @@ export async function gas(method, ...params) {
             })
             .withFailureHandler((err) => {
                 reject(err);
-            })[method]();
+            })[method](...params);
     });
 }

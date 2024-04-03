@@ -61,6 +61,12 @@ watchEffect(() => {
     }
 });
 
+watchEffect(async () => {
+    if (hotelTimeframe.value && sheetState.timeframeRange) {
+        await gas('fillRangeWithSameValue', sheetState.timeframeRange, JSON.stringify(hotelTimeframe.value));
+    }
+});
+
 function isDisabledDay(dt) {
     return dayjs(dt).isBefore(dayjs());
 }
@@ -188,7 +194,7 @@ watchEffect(() => {
 
                 <el-collapse-item v-if="isTimeframeColumnSelected || isNightsColumnSelected" name="hotel-search" title="Hotel(s) search params">
                     <el-divider v-if="isTimeframeColumnSelected" size="small">Timeframe(s)</el-divider>
-                    <TimeframeSelector v-model="hotelTimeframe"></TimeframeSelector>
+                    <TimeframeSelector v-if="isTimeframeColumnSelected" v-model="hotelTimeframe"></TimeframeSelector>
 
                     <el-divider v-if="isNightsColumnSelected" size="small">Stay nights</el-divider>
 

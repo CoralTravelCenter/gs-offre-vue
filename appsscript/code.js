@@ -70,6 +70,15 @@ function intersectDataRanges(sheet, ...ranges) {
     }, sheet.getDataRange());
 }
 
+function fillRangeWithSameValue(rangeA1, value) {
+    const sheet = SpreadsheetApp.getActiveSheet();
+    const range = sheet.getRange(rangeA1);
+    const rows_in_range = range.getLastRow() - range.getRow() + 1;
+    const columns_in_range = range.getLastColumn() - range.getColumn() + 1;
+    const values4range = new Array(rows_in_range).fill(new Array(columns_in_range).fill(value));
+    range.setValues(values4range);
+}
+
 function pullState() {
     const activeSheet = SpreadsheetApp.getActiveSheet();
     const activeRange = activeSheet.getActiveRange();
