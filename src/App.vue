@@ -39,9 +39,6 @@ const isNightsColumnSelected = computed(() => {
     return sheetState.selectionHeaders?.includes('nights');
 });
 
-watchEffect(() => {
-    // console.log('+++ selectionHeaders: %o', sheetState.selectionHeaders);
-});
 
 const hotelTimeframe = ref(null);
 
@@ -67,10 +64,6 @@ watchEffect(async () => {
     }
 });
 
-function isDisabledDay(dt) {
-    return dayjs(dt).isBefore(dayjs());
-}
-
 const chartersOnly = ref(true);
 const timeframeType = ref('fluid');
 const timeframeMonthly = ref(true);
@@ -82,13 +75,6 @@ watch(commonFluidSince, (newValue) => {
         commonFluidUntil.value = newValue;
     }
 });
-
-const isCommonFixedNamed = ref(false);
-
-const commonFixedItems = reactive([{ name: '', timeframe: [] }]);
-function moreFixedTimeframe() {
-    commonFixedItems.push({name: '', timeframe: []})
-}
 
 const commonNightsSelected = ref([7]);
 
@@ -143,7 +129,7 @@ watchEffect(() => {
                     <el-checkbox v-model="chartersOnly" size="small">Charters only</el-checkbox>
 
                     <el-divider size="small">Timeframe(s)</el-divider>
-                    <TimeframeSelector v-model="commonTimeframe"></TimeframeSelector>
+                    <TimeframeSelector auto-apply v-model="commonTimeframe"></TimeframeSelector>
 
                     <el-divider size="small">Stay nights</el-divider>
                     <NightsSelector v-model="commonNightsSelected"/>

@@ -4,7 +4,11 @@ import { reactive, ref, watch, computed, watchEffect } from "vue";
 import dayjs from "dayjs";
 
 const props = defineProps({
-    modelValue: Object
+    modelValue: Object,
+    autoApply: {
+        type: Boolean,
+        default: false
+    }
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -38,18 +42,34 @@ const isTimeframeSetupValid = computed(() => {
     }
 });
 
+const timeframeDescriptor = computed(() => {
+    const descriptor = {
+        timeframeType: timeframeType.value,
+        timeframeMonthly: timeframeMonthly.value,
+    };
+    if (timeframeType.value === 'fixed') {
+        Object.assign(descriptor, { isFixedNamed: isFixedNamed.value, fixedItems });
+    } else if (timeframeType.value === 'fluid') {
+        Object.assign(descriptor, { fluidSince: fluidSince.value, fluidUntil: fluidUntil.value });
+    }
+    return descriptor;
+});
+
+function updateModelValue() {
+    emit('update:modelValue', timeframeDescriptor.value);
+    // emit('update:modelValue', {
+    //     timeframeType: timeframeType.value,
+    //     isFixedNamed: isFixedNamed.value,
+    //     fixedItems,
+    //     timeframeMonthly: timeframeMonthly.value,
+    //     fluidSince: fluidSince.value,
+    //     fluidUntil: fluidUntil.value
+    // });
+}
+
 watchEffect(() => {
-    if (isTimeframeSetupValid.value) {
-        emit('update:modelValue', {
-            timeframeType: timeframeType.value,
-            isFixedNamed: isFixedNamed.value,
-            fixedItems,
-            timeframeMonthly: timeframeMonthly.value,
-            fluidSince: fluidSince.value,
-            fluidUntil: fluidUntil.value
-        });
-    } else {
-        emit('update:modelValue', null);
+    if (isTimeframeSetupValid.value && props.autoApply) {
+        updateModelValue();
     }
 });
 
@@ -85,9 +105,14 @@ watchEffect(() => {
             <el-input-number size="small" v-model="fluidUntil" :min="fluidSince" :max="fluidSince + 100"></el-input-number>
         </div>
         <el-checkbox v-if="!isFixedNamed" v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
+        <div v-if="!autoApply" class="should-apply">
+            <el-button type="success" size="small" :disabled="!isTimeframeSetupValid" @click="updateModelValue">Apply timeframe(s)</el-button>
+        </div>
     </div>
 </template>
 
 <style scoped lang="less">
-
+    .should-apply {
+        margin-top: .5em;
+    }
 </style>
