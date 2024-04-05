@@ -10,22 +10,31 @@ const props = defineProps({
         default: false
     }
 });
-const emit = defineEmits(['update:modelValue']);
 
-const timeframeType = ref(props.modelValue?.timeframeType ?? 'fluid');
-const isFixedNamed = ref(props.modelValue?.isFixedNamed ?? false);
-const fixedItems = reactive(props.modelValue?.fixedItems ?? [{ name: '', timeframe: [] }]);
+const emit = defineEmits(['update:modelValue','apply']);
+
+const timeframeType = ref();
+const isFixedNamed = ref();
+const fixedItems = reactive([{ name: '', timeframe: [] }]);
 function moreFixedTimeframe() {
     fixedItems.push({name: '', timeframe: []})
 }
 
-const fluidSince = ref(props.modelValue?.fluidSince ?? 15);
-const fluidUntil = ref(props.modelValue?.fluidUntil ?? (15 + 30));
+const fluidSince = ref();
+const fluidUntil = ref();
 watch(fluidSince, (newValue) => {
     if (newValue > fluidUntil.value) fluidUntil.value = newValue;
 });
 
 const timeframeMonthly = ref(props.modelValue?.timeframeMonthly ?? true);
+
+watchEffect(() => {
+    timeframeType.value = props.modelValue?.timeframeType ?? 'fluid';
+    isFixedNamed.value = props.modelValue?.isFixedNamed ?? false;
+    fixedItems.splice(0, Infinity, ...(props.modelValue?.fixedItems ?? [{ name: '', timeframe: [] }]));
+    fluidSince.value = props.modelValue?.fluidSince ?? 15;
+    fluidUntil.value = props.modelValue?.fluidUntil ?? (15 + 30);
+});
 
 function isDisabledDay(dt) {
     return dayjs(dt).isBefore(dayjs());
@@ -57,14 +66,11 @@ const timeframeDescriptor = computed(() => {
 
 function updateModelValue() {
     emit('update:modelValue', timeframeDescriptor.value);
-    // emit('update:modelValue', {
-    //     timeframeType: timeframeType.value,
-    //     isFixedNamed: isFixedNamed.value,
-    //     fixedItems,
-    //     timeframeMonthly: timeframeMonthly.value,
-    //     fluidSince: fluidSince.value,
-    //     fluidUntil: fluidUntil.value
-    // });
+}
+
+function apply() {
+    updateModelValue();
+    emit('apply');
 }
 
 watchEffect(() => {
@@ -106,7 +112,7 @@ watchEffect(() => {
         </div>
         <el-checkbox v-if="!isFixedNamed" v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
         <div v-if="!autoApply" class="should-apply">
-            <el-button type="success" size="small" :disabled="!isTimeframeSetupValid" @click="updateModelValue">Apply timeframe(s)</el-button>
+            <el-button type="success" size="small" :disabled="!isTimeframeSetupValid" @click="apply">Apply timeframe(s)</el-button>
         </div>
     </div>
 </template>

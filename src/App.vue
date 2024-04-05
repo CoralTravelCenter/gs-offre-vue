@@ -3,7 +3,6 @@ import { onMounted, ref, reactive, watchEffect, watch, computed } from 'vue';
 import { useIntervalFn } from "@vueuse/core";
 import { CircleCheckFilled, WarnTriangleFilled } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
-import dayjs from "dayjs";
 import NightsSelector from "./components/NightsSelector.vue";
 import TimeframeSelector from "./components/TimeframeSelector.vue";
 
@@ -42,27 +41,26 @@ const isNightsColumnSelected = computed(() => {
 
 const hotelTimeframe = ref(null);
 
-watchEffect(() => {
-    console.log('*** sheetState.timeframeRange: %o', sheetState.timeframeRange);
-    console.log('*** sheetState.timeframeValues: %o', sheetState.timeframeValues);
-    if (sheetState.timeframeValues?.length) {
-        const timeframe_set = new Set(sheetState.timeframeValues);
-        if (timeframe_set.size === 1) {
-            console.log(sheetState.timeframeValues.at(0));
-            hotelTimeframe.value = JSON.parse(sheetState.timeframeValues.at(0) || null);
+function applyHotelTimeframe() {
+    gas('fillRangeWithSameValue', sheetState.timeframeRange, JSON.stringify(hotelTimeframe.value));
+}
+
+watch(() => sheetState.timeframeRange, (newRange, oldRange) => {
+    if (newRange !== oldRange) {
+        console.log('*** sheetState.timeframeRange newRange: %o', newRange);
+        if (sheetState.timeframeValues?.length) {
+            const timeframe_set = new Set(sheetState.timeframeValues);
+            if (timeframe_set.size === 1) {
+                hotelTimeframe.value = JSON.parse(sheetState.timeframeValues.at(0) || null);
+            } else {
+                hotelTimeframe.value = null;
+            }
         } else {
             hotelTimeframe.value = null;
         }
-    } else {
-        hotelTimeframe.value = null;
     }
 });
 
-watchEffect(async () => {
-    if (hotelTimeframe.value && sheetState.timeframeRange) {
-        await gas('fillRangeWithSameValue', sheetState.timeframeRange, JSON.stringify(hotelTimeframe.value));
-    }
-});
 
 const chartersOnly = ref(true);
 const timeframeType = ref('fluid');
@@ -100,10 +98,6 @@ const isInterfaceOptionsValid = computed(() => {
     const bad_all_offers_setup = commonUseAllOffersButton.value && !commonAllOffersButtonLabel.value;
     const bad_prefer_region_setup = commonUsePreferRegion.value && !commonPreferRegion.value;
     return !bad_all_offers_setup && !bad_prefer_region_setup;
-});
-
-watchEffect(() => {
-    console.log('+++ commonTimeframe: %o', commonTimeframe.value);
 });
 
 </script>
@@ -180,7 +174,7 @@ watchEffect(() => {
 
                 <el-collapse-item v-if="isTimeframeColumnSelected || isNightsColumnSelected" name="hotel-search" title="Hotel(s) search params">
                     <el-divider v-if="isTimeframeColumnSelected" size="small">Timeframe(s)</el-divider>
-                    <TimeframeSelector v-if="isTimeframeColumnSelected" v-model="hotelTimeframe"></TimeframeSelector>
+                    <TimeframeSelector v-if="isTimeframeColumnSelected" v-model="hotelTimeframe" @apply="applyHotelTimeframe"></TimeframeSelector>
 
                     <el-divider v-if="isNightsColumnSelected" size="small">Stay nights</el-divider>
 
