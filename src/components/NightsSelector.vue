@@ -1,9 +1,8 @@
 <script setup>
-import { computed, reactive, watchEffect, onMounted } from "vue";
+import { computed, reactive, watchEffect } from "vue";
 
 const props = defineProps({
     modelValue:      Array,
-    // nightsAvailable: Array,
     searchType:      {
         type: String,
         default: 'package'
@@ -34,8 +33,6 @@ function handleNightClick(night) {
 
 watchEffect(() => {
     for (const night of nightsOptions) {
-        // night.disabled = (props.searchType === 'disabled') || (props.searchType === 'package' && !props.nightsAvailable.includes(night.value));
-        // night.disabled && selectionSet.delete(night);
         night.disabled = false;
         if (props.searchType === 'hotel' && selectionSet.size > 1) {
             const keepThis = [...selectionSet][0];

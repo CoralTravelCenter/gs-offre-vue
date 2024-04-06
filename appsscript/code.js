@@ -89,8 +89,11 @@ function pullState() {
         timeframeRange = intersectDataRanges(activeSheet, activeRange, activeSheet.getRange(2, timeframeColumnIdx + activeRange.getColumn(), activeSheet.getLastRow() - 1, 1));
         timeframeValues = timeframeRange?.getValues()[0];
     }
-    if (selectionHeaders.includes('nights')) {
-
+    let nightsValues, nightsRange;
+    const nightsColumnIdx = selectionHeaders.indexOf('nights');
+    if (~nightsColumnIdx) {
+        nightsRange = intersectDataRanges(activeSheet, activeRange, activeSheet.getRange(2, nightsColumnIdx + activeRange.getColumn(), activeSheet.getLastRow() - 1, 1));
+        nightsValues = nightsRange?.getValues()[0];
     }
     return {
         activeSheetName:  activeSheet.getName(),
@@ -98,6 +101,8 @@ function pullState() {
         selectionHeaders,
         timeframeRange: timeframeRange?.getA1Notation(),
         timeframeValues,
+        nightsRange: nightsRange?.getA1Notation(),
+        nightsValues,
         // activeCell :      'activeCell'
     };
 }

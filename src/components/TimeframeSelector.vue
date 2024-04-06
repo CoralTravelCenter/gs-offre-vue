@@ -11,7 +11,7 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['update:modelValue','apply']);
+const emit = defineEmits(['update:modelValue','apply','isValid']);
 
 const timeframeType = ref();
 const isFixedNamed = ref();
@@ -49,6 +49,10 @@ const isTimeframeSetupValid = computed(() => {
     } else if (timeframeType.value === 'fluid') {
         return fluidSince.value >= 1 && fluidUntil.value >= fluidSince.value;
     }
+});
+
+watchEffect(() => {
+    emit('isValid', isTimeframeSetupValid.value);
 });
 
 const timeframeDescriptor = computed(() => {

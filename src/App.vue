@@ -61,10 +61,10 @@ watch(() => sheetState.timeframeRange, (newRange, oldRange) => {
     }
 });
 
+const hotelNightsSelected = ref([7]);
+
 
 const chartersOnly = ref(true);
-const timeframeType = ref('fluid');
-const timeframeMonthly = ref(true);
 
 const commonFluidSince = ref(15);
 const commonFluidUntil = ref(15 + 30);
@@ -86,9 +86,7 @@ const commonOfferPrice = ref('');
 
 
 const commonTimeframe = ref(null);
-const isCommonTimeframeValid = computed(() => {
-    return !!commonTimeframe.value;
-});
+const isCommonTimeframeValid = ref();
 
 const isCommonNightsValid = computed(() => {
     return !!commonNightsSelected.value?.length;
@@ -123,7 +121,8 @@ const isInterfaceOptionsValid = computed(() => {
                     <el-checkbox v-model="chartersOnly" size="small">Charters only</el-checkbox>
 
                     <el-divider size="small">Timeframe(s)</el-divider>
-                    <TimeframeSelector auto-apply v-model="commonTimeframe"></TimeframeSelector>
+                    <TimeframeSelector auto-apply v-model="commonTimeframe"
+                                       @is-valid="isValid => isCommonTimeframeValid = isValid"></TimeframeSelector>
 
                     <el-divider size="small">Stay nights</el-divider>
                     <NightsSelector v-model="commonNightsSelected"/>
@@ -177,6 +176,7 @@ const isInterfaceOptionsValid = computed(() => {
                     <TimeframeSelector v-if="isTimeframeColumnSelected" v-model="hotelTimeframe" @apply="applyHotelTimeframe"></TimeframeSelector>
 
                     <el-divider v-if="isNightsColumnSelected" size="small">Stay nights</el-divider>
+                    <NightsSelector v-if="isNightsColumnSelected" v-model="hotelNightsSelected"/>
 
                 </el-collapse-item>
 
