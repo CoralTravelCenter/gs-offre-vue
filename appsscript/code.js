@@ -96,6 +96,7 @@ function pullState() {
         nightsValues = nightsRange?.getValues()[0];
     }
     return {
+        isActiveSheetEmpty: activeSheet.getDataRange().isBlank(),
         activeSheetName:  activeSheet.getName(),
         selectionRange:   activeRange.getA1Notation(),
         selectionHeaders,

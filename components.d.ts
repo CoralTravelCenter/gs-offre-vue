@@ -25,4 +25,7 @@ declare module 'vue' {
     NightsSelector: typeof import('./src/components/NightsSelector.vue')['default']
     TimeframeSelector: typeof import('./src/components/TimeframeSelector.vue')['default']
   }
+  export interface ComponentCustomProperties {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
+  }
 }

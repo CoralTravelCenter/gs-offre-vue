@@ -3,12 +3,16 @@ import { computed, reactive, watchEffect } from "vue";
 
 const props = defineProps({
     modelValue:      Array,
-    searchType:      {
-        type: String,
+    searchType: {
+        type:    String,
         default: 'package'
+    },
+    autoApply: {
+        type: Boolean,
+        default: false
     }
 });
-const emit = defineEmits(['shouldValidate', 'update:modelValue']);
+const emit = defineEmits(['shouldValidate', 'update:modelValue', 'apply']);
 
 const selectionSet = reactive(new Set());
 
@@ -43,8 +47,15 @@ watchEffect(() => {
 });
 
 watchEffect(() => {
-    emit('update:modelValue', [...selectionSet].map(n => n.value));
+    if (props.autoApply) {
+        emit('update:modelValue', [...selectionSet].map(n => n.value));
+    }
 });
+
+function apply() {
+    emit('update:modelValue', [...selectionSet].map(n => n.value));
+    emit('apply');
+}
 
 const selectionReadout = computed(() => {
     const nightsOrdered = Array.from(selectionSet).map(night => night.value).sort((a, b) => a - b);
@@ -78,19 +89,24 @@ const selectionReadout = computed(() => {
 </script>
 
 <template>
-    <el-popover trigger="click" placement="bottom-start" width="auto" :teleported="false" @hide="$emit('shouldValidate')">
-        <template #reference>
-            <div class="input-readout">{{ selectionReadout }}</div>
-        </template>
-        <div class="nights-grid">
-            <button v-for="night in nightsOptions"
-                    :class="{
+    <div class="nights-selector">
+        <el-popover trigger="click" placement="bottom-start" width="auto" :teleported="false" @hide="$emit('shouldValidate')">
+            <template #reference>
+                <div class="input-readout">{{ selectionReadout }}</div>
+            </template>
+            <div class="nights-grid">
+                <button v-for="night in nightsOptions"
+                        :class="{
                         selected: selectionSet.has(night),
                         disabled: night.disabled
                     }"
-                    @click="handleNightClick(night)">{{ night.value }}</button>
+                        @click="handleNightClick(night)">{{ night.value }}</button>
+            </div>
+        </el-popover>
+        <div v-if="!autoApply" class="should-apply">
+            <el-button type="success" size="small" :disabled="!selectionSet.size" @click="apply">Apply nights</el-button>
         </div>
-    </el-popover>
+    </div>
 </template>
 
 <style scoped lang="less">
@@ -131,4 +147,9 @@ const selectionReadout = computed(() => {
         }
     }
 }
+
+.should-apply {
+    margin-top: .5em;
+}
+
 </style>

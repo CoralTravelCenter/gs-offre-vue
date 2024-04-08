@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, reactive, watchEffect, watch, computed } from 'vue';
-import { useIntervalFn } from "@vueuse/core";
+import { useEventListener, useIntervalFn } from "@vueuse/core";
 import { CircleCheckFilled, WarnTriangleFilled } from '@element-plus/icons-vue';
 import { gas } from "./components/useful.js";
 import NightsSelector from "./components/NightsSelector.vue";
@@ -17,18 +17,33 @@ async function doInitSheet() {
 }
 
 onMounted(() => {
-    useIntervalFn(() => {
-        gas('pullState').then((result) => Object.assign(sheetState, result));
-    }, 2000);
-
+    // useIntervalFn(() => {
+    //     gas('pullState').then((result) => Object.assign(sheetState, result));
+    // }, 2000);
 });
 
-watchEffect(async () => {
-    console.log('+++ activeSheetName: %o', sheetState.activeSheetName);
-    if (sheetState.activeSheetName) {
-        isActiveSheetEmpty.value = await gas('isActiveSheetEmpty');
-    }
+const pullStateInProgress = ref(false);
+
+useEventListener(document.documentElement, 'mouseenter', async () => {
+    console.log('******* MOUSEENTER *************');
+    document.documentElement.classList.add('interactive');
+    pullStateInProgress.value = true;
+    const result = await gas('pullState');
+    Object.assign(sheetState, result);
+    isActiveSheetEmpty.value = sheetState.isActiveSheetEmpty;
+    pullStateInProgress.value = false;
 });
+useEventListener(document.documentElement, 'mouseleave', () => {
+    console.log('========== MOUSELEAVE ==============');
+    document.documentElement.classList.remove('interactive');
+});
+
+// watchEffect(async () => {
+//     console.log('+++ activeSheetName: %o', sheetState.activeSheetName);
+//     if (sheetState.activeSheetName) {
+//         isActiveSheetEmpty.value = await gas('isActiveSheetEmpty');
+//     }
+// });
 
 const isTimeframeColumnSelected = computed(() => {
     // return sheetState.selectionHeaders?.includes('timeframe');
@@ -63,6 +78,40 @@ watch(() => sheetState.timeframeRange, (newRange, oldRange) => {
 
 const hotelNightsSelected = ref([7]);
 
+function applyHotelNights() {
+    gas('fillRangeWithSameValue', sheetState.nightsRange, JSON.stringify(hotelNightsSelected.value.sort((a, b) => a - b)));
+}
+
+watch(() => sheetState.nightsRange, (newRange, oldRange) => {
+    if (newRange !== oldRange) {
+        console.log('*** sheetState.nightsRange newRange: %o', newRange);
+        if (sheetState.nightsValues?.length) {
+            const nights_set = new Set(sheetState.nightsValues);
+            if (nights_set.size === 1) {
+                let hotel_nights;
+                try {
+                    hotel_nights = JSON.parse(sheetState.nightsValues.at(0));
+                    if (Array.isArray(hotel_nights)) {
+                        hotelNightsSelected.value = hotel_nights;
+                    } else {
+                        hotelNightsSelected.value = [hotel_nights];
+                    }
+                } catch (ex) {
+                    hotel_nights = sheetState.nightsValues.at(0).replace(/[^0-9,]/g, '');
+                    if (hotel_nights) {
+                        hotelNightsSelected.value = hotel_nights.split(',');
+                    } else {
+                        hotelNightsSelected.value = [7];
+                    }
+                }
+            } else {
+                hotelNightsSelected.value = [7];
+            }
+        } else {
+            hotelNightsSelected.value = [7];
+        }
+    }
+})
 
 const chartersOnly = ref(true);
 
@@ -101,7 +150,7 @@ const isInterfaceOptionsValid = computed(() => {
 </script>
 
 <template>
-    <div class="gs-offre-vue">
+    <div class="gs-offre-vue" v-loading="pullStateInProgress">
         <div v-if="isActiveSheetEmpty" class="sheet-init">
             <el-button type="primary" @click="doInitSheet">Init new sheet</el-button>
         </div>
@@ -125,7 +174,7 @@ const isInterfaceOptionsValid = computed(() => {
                                        @is-valid="isValid => isCommonTimeframeValid = isValid"></TimeframeSelector>
 
                     <el-divider size="small">Stay nights</el-divider>
-                    <NightsSelector v-model="commonNightsSelected"/>
+                    <NightsSelector v-model="commonNightsSelected" auto-apply />
                 </el-collapse-item>
 
                 <el-collapse-item name="interface-options">
@@ -176,7 +225,7 @@ const isInterfaceOptionsValid = computed(() => {
                     <TimeframeSelector v-if="isTimeframeColumnSelected" v-model="hotelTimeframe" @apply="applyHotelTimeframe"></TimeframeSelector>
 
                     <el-divider v-if="isNightsColumnSelected" size="small">Stay nights</el-divider>
-                    <NightsSelector v-if="isNightsColumnSelected" v-model="hotelNightsSelected"/>
+                    <NightsSelector v-if="isNightsColumnSelected" v-model="hotelNightsSelected" @apply="applyHotelNights" />
 
                 </el-collapse-item>
 
@@ -192,6 +241,15 @@ const isInterfaceOptionsValid = computed(() => {
     * {
         box-sizing: border-box;
     }
+
+    transition: filter .4s, opacity .4s;
+
+    &:not(.interactive) {
+        pointer-events: none;
+        opacity: .5;
+        filter: blur(2px) saturate(0);
+    }
+
 }
 body, #app {
     height: -webkit-fill-available;
