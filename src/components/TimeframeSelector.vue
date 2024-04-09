@@ -17,7 +17,7 @@ const timeframeType = ref();
 const isFixedNamed = ref();
 const fixedItems = reactive([{ name: '', timeframe: [] }]);
 function moreFixedTimeframe() {
-    fixedItems.push({name: '', timeframe: []})
+    fixedItems.push({ name: '', timeframe: [] });
 }
 
 const fluidSince = ref();
@@ -26,7 +26,7 @@ watch(fluidSince, (newValue) => {
     if (newValue > fluidUntil.value) fluidUntil.value = newValue;
 });
 
-const timeframeMonthly = ref(props.modelValue?.timeframeMonthly ?? true);
+const timeframeMonthly = ref();
 
 watchEffect(() => {
     timeframeType.value = props.modelValue?.timeframeType ?? 'fluid';
@@ -34,6 +34,7 @@ watchEffect(() => {
     fixedItems.splice(0, Infinity, ...(props.modelValue?.fixedItems ?? [{ name: '', timeframe: [] }]));
     fluidSince.value = props.modelValue?.fluidSince ?? 15;
     fluidUntil.value = props.modelValue?.fluidUntil ?? (15 + 30);
+    timeframeMonthly.value = props.modelValue?.timeframeMonthly ?? true;
 });
 
 function isDisabledDay(dt) {

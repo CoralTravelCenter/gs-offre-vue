@@ -2,9 +2,12 @@
 import { onMounted, ref, reactive, watchEffect, watch, computed } from 'vue';
 import { useEventListener, useIntervalFn } from "@vueuse/core";
 import { CircleCheckFilled, WarnTriangleFilled } from '@element-plus/icons-vue';
-import { gas } from "./components/useful.js";
+import { gas, timeframeRuntimeConfig } from "./components/useful.js";
 import NightsSelector from "./components/NightsSelector.vue";
 import TimeframeSelector from "./components/TimeframeSelector.vue";
+
+import Mustache from "mustache";
+import setup_data_template from "./templates/control-script-template.html?raw";
 
 const openedItems = ref(['common-search']);
 
@@ -16,37 +19,34 @@ async function doInitSheet() {
     isActiveSheetEmpty.value = false;
 }
 
-onMounted(() => {
-    // useIntervalFn(() => {
-    //     gas('pullState').then((result) => Object.assign(sheetState, result));
-    // }, 2000);
+const pullStateInProgress = ref(false);
+const isInteractive = ref(false);
+
+watchEffect(async () => {
+    if (isInteractive.value) {
+        document.documentElement.classList.add('interactive');
+        pullStateInProgress.value = true;
+        const result = await gas('pullState');
+        Object.assign(sheetState, result);
+        isActiveSheetEmpty.value = sheetState.isActiveSheetEmpty;
+        pullStateInProgress.value = false;
+    } else {
+        document.documentElement.classList.remove('interactive');
+    }
 });
 
-const pullStateInProgress = ref(false);
-
-useEventListener(document.documentElement, 'mouseenter', async () => {
-    console.log('******* MOUSEENTER *************');
-    document.documentElement.classList.add('interactive');
-    pullStateInProgress.value = true;
-    const result = await gas('pullState');
-    Object.assign(sheetState, result);
-    isActiveSheetEmpty.value = sheetState.isActiveSheetEmpty;
-    pullStateInProgress.value = false;
+let blur_timeout;
+useEventListener(document.documentElement, 'mouseenter', () => {
+    clearTimeout(blur_timeout);
+    isInteractive.value = true;
 });
 useEventListener(document.documentElement, 'mouseleave', () => {
-    console.log('========== MOUSELEAVE ==============');
-    document.documentElement.classList.remove('interactive');
+    blur_timeout = setTimeout(() => {
+        isInteractive.value = false;
+    }, 1000);
 });
 
-// watchEffect(async () => {
-//     console.log('+++ activeSheetName: %o', sheetState.activeSheetName);
-//     if (sheetState.activeSheetName) {
-//         isActiveSheetEmpty.value = await gas('isActiveSheetEmpty');
-//     }
-// });
-
 const isTimeframeColumnSelected = computed(() => {
-    // return sheetState.selectionHeaders?.includes('timeframe');
     return !!sheetState.timeframeRange;
 });
 const isNightsColumnSelected = computed(() => {
@@ -85,31 +85,34 @@ function applyHotelNights() {
 watch(() => sheetState.nightsRange, (newRange, oldRange) => {
     if (newRange !== oldRange) {
         console.log('*** sheetState.nightsRange newRange: %o', newRange);
-        if (sheetState.nightsValues?.length) {
+        let hotel_nights_new_value;
+        if (newRange && sheetState.nightsValues?.length) {
             const nights_set = new Set(sheetState.nightsValues);
             if (nights_set.size === 1) {
                 let hotel_nights;
                 try {
                     hotel_nights = JSON.parse(sheetState.nightsValues.at(0));
                     if (Array.isArray(hotel_nights)) {
-                        hotelNightsSelected.value = hotel_nights;
+                        hotel_nights_new_value = hotel_nights;
                     } else {
-                        hotelNightsSelected.value = [hotel_nights];
+                        hotel_nights_new_value = [Number(hotel_nights)];
                     }
                 } catch (ex) {
                     hotel_nights = sheetState.nightsValues.at(0).replace(/[^0-9,]/g, '');
                     if (hotel_nights) {
-                        hotelNightsSelected.value = hotel_nights.split(',');
+                        hotel_nights_new_value = hotel_nights.split(',').map(n => Number(n));
                     } else {
-                        hotelNightsSelected.value = [7];
+                        hotel_nights_new_value = [7];
                     }
                 }
             } else {
-                hotelNightsSelected.value = [7];
+                hotel_nights_new_value = [7];
             }
         } else {
-            hotelNightsSelected.value = [7];
+            hotel_nights_new_value = [7];
         }
+        console.log('+++++ hotel_nights_new_value: %o', hotel_nights_new_value);
+        hotelNightsSelected.value = hotel_nights_new_value;
     }
 })
 
@@ -146,6 +149,38 @@ const isInterfaceOptionsValid = computed(() => {
     const bad_prefer_region_setup = commonUsePreferRegion.value && !commonPreferRegion.value;
     return !bad_all_offers_setup && !bad_prefer_region_setup;
 });
+
+const copyMarkupInProgress = ref(false);
+async function copyMarkup() {
+    copyMarkupInProgress.value = true;
+    const all_the_data = await gas('pullDataRange');
+    console.log(all_the_data);
+    // console.log(setup_data_template);
+
+    const setup_data = {
+        options: {
+            chartersOnly: chartersOnly.value,
+            groupBy: commonGroupByLocation.value,
+            nights: commonNightsSelected.value,
+            timeframe: timeframeRuntimeConfig(commonTimeframe.value),
+        }
+    };
+
+    if (commonUseAllOffersButton.value) {
+        setup_data.options.wildcardOption = commonAllOffersButtonLabel.value;
+    }
+    if (commonUsePreferRegion.value) {
+        setup_data.options.preferRegion = commonPreferRegion.value;
+    }
+    if (commonOfferPrice.value) {
+        setup_data.options.pricing = commonOfferPrice.value;
+    }
+
+    const final_markup = Mustache.render(setup_data_template, { setup_object_json: JSON.stringify(setup_data) });
+    console.log(final_markup);
+
+    copyMarkupInProgress.value = false;
+}
 
 </script>
 
@@ -231,6 +266,13 @@ const isInterfaceOptionsValid = computed(() => {
 
             </el-collapse>
         </div>
+
+        <div class="main-action" v-if="!isActiveSheetEmpty">
+            <el-button type="primary" @click="copyMarkup"
+                       :loading="copyMarkupInProgress"
+                       :disabled="copyMarkupInProgress || !isCommonTimeframeValid || !isCommonNightsValid || !isInterfaceOptionsValid">COPY MARKUP</el-button>
+        </div>
+
     </div>
 </template>
 
@@ -384,6 +426,13 @@ body, #app {
             flex: 1;
             padding: 0;
         }
+    }
+
+    .main-action {
+        flex-grow: 1;
+        display: grid;
+        place-content: center;
+        padding: 1em 0;
     }
 
 }

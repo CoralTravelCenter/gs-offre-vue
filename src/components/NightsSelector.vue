@@ -35,16 +35,9 @@ function handleNightClick(night) {
     }
 }
 
-watchEffect(() => {
-    for (const night of nightsOptions) {
-        night.disabled = false;
-        if (props.searchType === 'hotel' && selectionSet.size > 1) {
-            const keepThis = [...selectionSet][0];
-            selectionSet.clear();
-            selectionSet.add(keepThis);
-        }
-    }
-});
+function updateModelValue() {
+    emit('update:modelValue', [...selectionSet].map(n => n.value));
+}
 
 watchEffect(() => {
     if (props.autoApply) {
@@ -53,7 +46,7 @@ watchEffect(() => {
 });
 
 function apply() {
-    emit('update:modelValue', [...selectionSet].map(n => n.value));
+    updateModelValue();
     emit('apply');
 }
 

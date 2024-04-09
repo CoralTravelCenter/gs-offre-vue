@@ -17,6 +17,7 @@
         "@vueuse/core": "^10.9.0",
         "dayjs": "^1.11.10",
         "element-plus": "^2.6.1",
+        "mustache": "^4.2.0",
         "vue": "^3.4.21"
     },
     "devDependencies": {

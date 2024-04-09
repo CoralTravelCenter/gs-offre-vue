@@ -108,6 +108,11 @@ function pullState() {
     };
 }
 
+function pullDataRange() {
+    const activeSheet = SpreadsheetApp.getActiveSheet();
+    return activeSheet.getDataRange().getValues();
+}
+
 function isActiveSheetEmpty() {
     return SpreadsheetApp.getActiveSheet().getDataRange().isBlank();
 }
@@ -126,7 +131,9 @@ function initActiveSheet() {
 
     // define conditional formatting for ID column
     const idsColumnRange = sheet.getRange('B:B');
+    const timeframesColumnRange = sheet.getRange('C2:C');
     idsColumnRange.setHorizontalAlignment('center');
+    timeframesColumnRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
     const missing_id_rule = SpreadsheetApp.newConditionalFormatRule()
         .whenTextEqualTo('---')
         .setBackground('red')
