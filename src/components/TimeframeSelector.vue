@@ -37,16 +37,27 @@ watchEffect(() => {
     timeframeMonthly.value = props.modelValue?.timeframeMonthly ?? true;
 });
 
+watchEffect(() => {
+    isFixedNamed.value = fixedItems.length > 1;
+}, { flush: 'post' });
+
 function isDisabledDay(dt) {
     return dayjs(dt).isBefore(dayjs());
 }
 
 const isTimeframeSetupValid = computed(() => {
     if (timeframeType.value === 'fixed') {
-        return fixedItems.every((item) => {
-            const date_range_defined = item.timeframe?.length === 2 && !!item.timeframe[0] && !!item.timeframe[1];
-            return (isFixedNamed.value ? !!item.name : true) && date_range_defined;
-        });
+        if (fixedItems.length === 1) {
+            const item = fixedItems[0];
+            return (isFixedNamed.value ? !!item.name : true) && !!item.timeframe[0] && !!item.timeframe[1];
+        } else {
+            const ranges_and_names_defined = fixedItems.every((item) => {
+                const date_range_defined = item.timeframe?.length === 2 && !!item.timeframe[0] && !!item.timeframe[1];
+                return (isFixedNamed.value ? !!item.name : true) && date_range_defined;
+            });
+            const all_names_different = new Set(fixedItems.map(i => i.name)).size === fixedItems.length;
+            return ranges_and_names_defined && all_names_different;
+        }
     } else if (timeframeType.value === 'fluid') {
         return fluidSince.value >= 1 && fluidUntil.value >= fluidSince.value;
     }
@@ -89,11 +100,11 @@ watchEffect(() => {
 <template>
     <div class="timeframe-selector">
         <el-radio-group class="fullwidth" v-model="timeframeType" size="small" style="width: 100%;">
-            <el-radio-button label="Fixed" value="fixed"></el-radio-button>
             <el-radio-button label="Fluid" value="fluid"></el-radio-button>
+            <el-radio-button label="Fixed" value="fixed"></el-radio-button>
         </el-radio-group>
         <div class="fields-stack" v-if="timeframeType === 'fixed'">
-            <el-checkbox v-model="isFixedNamed" size="small">Named</el-checkbox>
+            <el-checkbox v-model="isFixedNamed" :disabled="fixedItems.length > 1" size="small">Named</el-checkbox>
             <div v-for="(item, idx) in fixedItems" class="fixed-item-flex">
                 <div class="name-date-picker">
                     <el-input class="name-input" v-if="isFixedNamed" v-model="item.name" size="small">
@@ -115,7 +126,7 @@ watchEffect(() => {
             <el-input-number size="small" v-model="fluidSince" :min="1" :max="100"></el-input-number>
             <el-input-number size="small" v-model="fluidUntil" :min="fluidSince" :max="fluidSince + 100"></el-input-number>
         </div>
-        <el-checkbox v-if="!isFixedNamed" v-model="timeframeMonthly" size="small">Group monthly</el-checkbox>
+        <el-checkbox v-if="!isFixedNamed" v-model="timeframeMonthly" size="small">Split by month</el-checkbox>
         <div v-if="!autoApply" class="should-apply">
             <el-button type="success" size="small" :disabled="!isTimeframeSetupValid" @click="apply">Apply timeframe(s)</el-button>
         </div>

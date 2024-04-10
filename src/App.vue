@@ -1,13 +1,15 @@
 <script setup>
-import { onMounted, ref, reactive, watchEffect, watch, computed } from 'vue';
-import { useEventListener, useIntervalFn } from "@vueuse/core";
+import { ref, reactive, watchEffect, watch, computed } from 'vue';
+import { useClipboard, useEventListener } from "@vueuse/core";
 import { CircleCheckFilled, WarnTriangleFilled } from '@element-plus/icons-vue';
 import { gas, timeframeRuntimeConfig } from "./components/useful.js";
 import NightsSelector from "./components/NightsSelector.vue";
 import TimeframeSelector from "./components/TimeframeSelector.vue";
+import { ElNotification } from "element-plus";
 
 import Mustache from "mustache";
 import setup_data_template from "./templates/control-script-template.html?raw";
+import { omit, omitBy, zipObject } from "lodash";
 
 const openedItems = ref(['common-search']);
 
@@ -151,10 +153,20 @@ const isInterfaceOptionsValid = computed(() => {
 });
 
 const copyMarkupInProgress = ref(false);
+const { copy: copy2clipboard } = useClipboard();
+
 async function copyMarkup() {
     copyMarkupInProgress.value = true;
     const all_the_data = await gas('pullDataRange');
-    console.log(all_the_data);
+    // console.log(all_the_data);
+
+    const hotels_collection = all_the_data.slice(1).map(row => {
+        const hotel = zipObject(all_the_data[0], row);
+        hotel.id = Number(hotel.id);
+        return omitBy(omit(hotel, ['name']), value => value === '');
+    });
+    console.log(hotels_collection);
+
     // console.log(setup_data_template);
 
     const setup_data = {
@@ -176,8 +188,25 @@ async function copyMarkup() {
         setup_data.options.pricing = commonOfferPrice.value;
     }
 
+    setup_data.hotels = hotels_collection.map(hotel => {
+        if (Object.keys(omit(hotel, 'id')).length === 0) {
+            // Nothing except id
+            return hotel.id;
+        } else {
+            const hotel_params = {
+                id: hotel.id
+            }
+            if (hotel.timeframe) hotel_params.timeframe = timeframeRuntimeConfig(JSON.parse(hotel.timeframe));
+            return hotel_params;
+        }
+    });
+
     const final_markup = Mustache.render(setup_data_template, { setup_object_json: JSON.stringify(setup_data) });
     console.log(final_markup);
+
+    await copy2clipboard(final_markup);
+
+    ElNotification({ type: 'success', position: 'bottom-right', title: 'Success', message: 'HTML markup copied to clipboard' });
 
     copyMarkupInProgress.value = false;
 }
@@ -300,6 +329,11 @@ body, #app {
 </style>
 
 <style>
+
+.el-notification.right {
+    max-width: 90vw;
+}
+
 .gs-offre-vue {
     width: 100%;
     height: -webkit-fill-available;
