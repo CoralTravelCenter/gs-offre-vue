@@ -35,3 +35,15 @@ export function timeframeRuntimeConfig(setup_object) {
     }
     return config;
 }
+
+export function nightsRuntimeConfig(string_or_array_json) {
+    let nights_parsed;
+    try {
+        nights_parsed = JSON.parse(string_or_array_json);
+        if (Array.isArray(nights_parsed)) return nights_parsed;
+        if (Number(nights_parsed)) return [Number(nights_parsed)];
+    } catch (ex) {
+        return string_or_array_json.replace(/[^0-9,]/g, '').split(',');
+    }
+    return null;
+}

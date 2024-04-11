@@ -2,7 +2,7 @@
 import { ref, reactive, watchEffect, watch, computed } from 'vue';
 import { useClipboard, useEventListener } from "@vueuse/core";
 import { CircleCheckFilled, WarnTriangleFilled } from '@element-plus/icons-vue';
-import { gas, timeframeRuntimeConfig } from "./components/useful.js";
+import { gas, nightsRuntimeConfig, timeframeRuntimeConfig } from "./components/useful.js";
 import NightsSelector from "./components/NightsSelector.vue";
 import TimeframeSelector from "./components/TimeframeSelector.vue";
 import { ElNotification } from "element-plus";
@@ -156,6 +156,7 @@ const copyMarkupInProgress = ref(false);
 const { copy: copy2clipboard } = useClipboard();
 
 async function copyMarkup() {
+    const control_fields = ['name', 'id', 'timeframe', 'nights']; // all others become USP'S items
     copyMarkupInProgress.value = true;
     const all_the_data = await gas('pullDataRange');
     // console.log(all_the_data);
@@ -193,10 +194,14 @@ async function copyMarkup() {
             // Nothing except id
             return hotel.id;
         } else {
-            const hotel_params = {
-                id: hotel.id
-            }
+            const hotel_params = { id: hotel.id };
             if (hotel.timeframe) hotel_params.timeframe = timeframeRuntimeConfig(JSON.parse(hotel.timeframe));
+            if (hotel.nights) {
+                const nights_parsed = nightsRuntimeConfig(hotel.nights);
+                if (nights_parsed) hotel_params.nights = nights_parsed;
+            }
+            const usp_list = Object.values(omit(hotel, control_fields));
+            if (usp_list.length > 0) hotel_params.usps = usp_list;
             return hotel_params;
         }
     });
