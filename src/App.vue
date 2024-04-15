@@ -156,7 +156,7 @@ const copyMarkupInProgress = ref(false);
 const { copy: copy2clipboard } = useClipboard();
 
 async function copyMarkup() {
-    const control_fields = ['name', 'id', 'timeframe', 'nights']; // all others become USP'S items
+    const control_fields = ['name', 'id', 'timeframe', 'nights', 'onlyhotel', 'hotelonly']; // all others become USP'S items
     copyMarkupInProgress.value = true;
     const all_the_data = await gas('pullDataRange');
     // console.log(all_the_data);
@@ -199,6 +199,9 @@ async function copyMarkup() {
             if (hotel.nights) {
                 const nights_parsed = nightsRuntimeConfig(hotel.nights);
                 if (nights_parsed) hotel_params.nights = nights_parsed;
+            }
+            if (hotel.onlyhotel || hotel.hotelonly) {
+                hotel_params.onlyhotel = true;
             }
             const usp_list = Object.values(omit(hotel, control_fields));
             if (usp_list.length > 0) hotel_params.usps = usp_list;
