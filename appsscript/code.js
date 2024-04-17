@@ -3,10 +3,17 @@ function hotelIdFormulaeForRow(row_idx) {
 }
 
 function hotelIdQueryForRow(row_idx) {
-    return `=IFERROR(JOIN(" | ",QUERY(IMPORTRANGE("12obWDe25k7pEMkXeqCh_5juRMeNT3Pc84yuoeXdlrXc","name-id!A:B"),"select Col2 where Col1 = '"&A${ row_idx }&"'")),"---")`;
+    return `=IFERROR(JOIN(" | ",QUERY(IMPORTRANGE("12obWDe25k7pEMkXeqCh_5juRMeNT3Pc84yuoeXdlrXc","name-id!A:B"),"select Col2 where upper(Col1) = upper('"&A${ row_idx }&"')")),"---")`;
 }
 
-function onOpen() {
+// function onOpen() {
+//     SpreadsheetApp.getUi()
+//         .createAddonMenu()
+//         .addItem('B2C Hotel Offers', 'openInterface')
+//         .addToUi();
+//     openInterface();
+// }
+function installedOnOpen() {
     SpreadsheetApp.getUi()
         .createAddonMenu()
         .addItem('B2C Hotel Offers', 'openInterface')

@@ -168,53 +168,70 @@ async function copyMarkup() {
     });
     console.log(hotels_collection);
 
+    const all_ids_are_numbers = hotels_collection.every(hotel => !!hotel.id);
+
     // console.log(setup_data_template);
 
-    const setup_data = {
-        options: {
-            chartersOnly: chartersOnly.value,
-            groupBy: commonGroupByLocation.value,
-            nights: commonNightsSelected.value,
-            timeframe: timeframeRuntimeConfig(commonTimeframe.value),
-        }
-    };
-
-    if (commonUseAllOffersButton.value) {
-        setup_data.options.wildcardOption = commonAllOffersButtonLabel.value;
-    }
-    if (commonUsePreferRegion.value) {
-        setup_data.options.preferRegion = commonPreferRegion.value;
-    }
-    if (commonOfferPrice.value) {
-        setup_data.options.pricing = commonOfferPrice.value;
-    }
-
-    setup_data.hotels = hotels_collection.map(hotel => {
-        if (Object.keys(omit(hotel, 'id')).length === 0) {
-            // Nothing except id
-            return hotel.id;
-        } else {
-            const hotel_params = { id: hotel.id };
-            if (hotel.timeframe) hotel_params.timeframe = timeframeRuntimeConfig(JSON.parse(hotel.timeframe));
-            if (hotel.nights) {
-                const nights_parsed = nightsRuntimeConfig(hotel.nights);
-                if (nights_parsed) hotel_params.nights = nights_parsed;
+    if (all_ids_are_numbers) {
+        const setup_data = {
+            options: {
+                chartersOnly: chartersOnly.value,
+                groupBy:      commonGroupByLocation.value,
+                nights:       commonNightsSelected.value,
+                timeframe:    timeframeRuntimeConfig(commonTimeframe.value),
             }
-            if (hotel.onlyhotel || hotel.hotelonly) {
-                hotel_params.onlyhotel = true;
-            }
-            const usp_list = Object.values(omit(hotel, control_fields));
-            if (usp_list.length > 0) hotel_params.usps = usp_list;
-            return hotel_params;
+        };
+
+        if (commonUseAllOffersButton.value) {
+            setup_data.options.wildcardOption = commonAllOffersButtonLabel.value;
         }
-    });
+        if (commonUsePreferRegion.value) {
+            setup_data.options.preferRegion = commonPreferRegion.value;
+        }
+        if (commonOfferPrice.value) {
+            setup_data.options.pricing = commonOfferPrice.value;
+        }
 
-    const final_markup = Mustache.render(setup_data_template, { setup_object_json: JSON.stringify(setup_data) });
-    console.log(final_markup);
+        setup_data.hotels = hotels_collection.map(hotel => {
+            if (Object.keys(omit(hotel, 'id')).length === 0) {
+                // Nothing except id
+                return hotel.id;
+            } else {
+                const hotel_params = { id: hotel.id };
+                if (hotel.timeframe) hotel_params.timeframe = timeframeRuntimeConfig(JSON.parse(hotel.timeframe));
+                if (hotel.nights) {
+                    const nights_parsed = nightsRuntimeConfig(hotel.nights);
+                    if (nights_parsed) hotel_params.nights = nights_parsed;
+                }
+                if (hotel.onlyhotel || hotel.hotelonly) {
+                    hotel_params.onlyhotel = true;
+                }
+                const usp_list = Object.values(omit(hotel, control_fields));
+                if (usp_list.length > 0) hotel_params.usps = usp_list;
+                return hotel_params;
+            }
+        });
 
-    await copy2clipboard(final_markup);
+        const final_markup = Mustache.render(setup_data_template, { setup_object_json: JSON.stringify(setup_data) });
+        console.log(final_markup);
 
-    ElNotification({ type: 'success', position: 'bottom-right', title: 'Success', message: 'HTML markup copied to clipboard' });
+        await copy2clipboard(final_markup);
+
+        ElNotification({
+            type:     'success',
+            position: 'bottom-right',
+            title:    'Success',
+            message:  'HTML markup copied to clipboard'
+        });
+    } else {
+        ElNotification({
+            duration: 0, // dont auto close
+            type:     'error',
+            position: 'bottom-right',
+            title:    'Failed',
+            message:  'Bad data detected'
+        });
+    }
 
     copyMarkupInProgress.value = false;
 }
