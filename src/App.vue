@@ -37,6 +37,10 @@ watchEffect(async () => {
     }
 });
 
+watch(() => sheetState.activeSheetId, (newId) => {
+    console.log('+++ activeSheetId CHANGED: %o', newId);
+});
+
 let blur_timeout;
 useEventListener(document.documentElement, 'mouseenter', () => {
     clearTimeout(blur_timeout);

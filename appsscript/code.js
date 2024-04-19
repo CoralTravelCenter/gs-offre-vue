@@ -105,6 +105,7 @@ function pullState() {
     return {
         isActiveSheetEmpty: activeSheet.getDataRange().isBlank(),
         activeSheetName:  activeSheet.getName(),
+        activeSheetId: activeSheet.getSheetId(),
         selectionRange:   activeRange.getA1Notation(),
         selectionHeaders,
         timeframeRange: timeframeRange?.getA1Notation(),
