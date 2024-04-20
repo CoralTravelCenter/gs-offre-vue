@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, watchEffect, watch, computed } from 'vue';
+import { ref, unref, toRef, reactive, watchEffect, watch, computed, nextTick } from 'vue';
 import { useClipboard, useEventListener } from "@vueuse/core";
 import { CircleCheckFilled, WarnTriangleFilled } from '@element-plus/icons-vue';
 import { gas, nightsRuntimeConfig, timeframeRuntimeConfig } from "./components/useful.js";
@@ -37,8 +37,28 @@ watchEffect(async () => {
     }
 });
 
-watch(() => sheetState.activeSheetId, (newId) => {
-    console.log('+++ activeSheetId CHANGED: %o', newId);
+const activeSheetId = toRef(() => sheetState.activeSheetId);
+const isPullingMetadata = ref(false);
+
+watchEffect(async () => {
+    if (activeSheetId.value) {
+        // console.log('######## activeSheetId: %o', activeSheetId.value);
+        isPullingMetadata.value = true;
+        const sheetMeta = await gas('pullMetadata');
+        isPullingMetadata.value = false;
+        console.log('######## sheetMeta: %o', sheetMeta);
+        if (sheetMeta) {
+            if (sheetMeta.chartersOnly !== undefined) {}chartersOnly.value = sheetMeta.chartersOnly;
+            if (sheetMeta.commonTimeframe) commonTimeframe.value = sheetMeta.commonTimeframe;
+            if (sheetMeta.commonNightsSelected) commonNightsSelected.value = sheetMeta.commonNightsSelected;
+            if (sheetMeta.commonGroupByLocation) commonGroupByLocation.value = sheetMeta.commonGroupByLocation;
+            if (sheetMeta.commonUseAllOffersButton !== undefined) commonUseAllOffersButton.value = sheetMeta.commonUseAllOffersButton;
+            if (sheetMeta.commonAllOffersButtonLabel) commonAllOffersButtonLabel.value = sheetMeta.commonAllOffersButtonLabel;
+            if (sheetMeta.commonUsePreferRegion !== undefined) commonUsePreferRegion.value = sheetMeta.commonUsePreferRegion;
+            if (sheetMeta.commonPreferRegion) commonPreferRegion.value = sheetMeta.commonPreferRegion;
+            if (sheetMeta.commonOfferPrice) commonOfferPrice.value = sheetMeta.commonOfferPrice;
+        }
+    }
 });
 
 let blur_timeout;
@@ -227,6 +247,29 @@ async function copyMarkup() {
             title:    'Success',
             message:  'HTML markup copied to clipboard'
         });
+        await nextTick();
+        const savingSetupNote = ElNotification({
+            showClose: false,
+            duration:  0,
+            type:      'info',
+            position:  'bottom-right',
+            title:     'Saving setup'
+        });
+        const meta_object = {
+            chartersOnly: unref(chartersOnly),
+            commonTimeframe: JSON.parse(JSON.stringify(commonTimeframe.value)),
+            commonNightsSelected: JSON.parse(JSON.stringify(commonNightsSelected.value)),
+            commonGroupByLocation: commonGroupByLocation.value,
+            commonUseAllOffersButton: commonUseAllOffersButton.value,
+            commonAllOffersButtonLabel: commonAllOffersButtonLabel.value,
+            commonUsePreferRegion: commonUsePreferRegion.value,
+            commonPreferRegion: commonPreferRegion.value,
+            commonOfferPrice: commonOfferPrice.value
+        };
+        console.log('### pushMetadata: %o', meta_object);
+        await gas('pushMetadata', meta_object);
+        savingSetupNote.close();
+
     } else {
         ElNotification({
             duration: 0, // dont auto close
@@ -249,7 +292,7 @@ async function copyMarkup() {
         </div>
         <div v-else>
             <el-collapse v-model="openedItems">
-                <el-collapse-item name="common-search">
+                <el-collapse-item name="common-search" v-loading="isPullingMetadata">
 
                     <template #title>
                         <el-icon size="large" :color="isCommonTimeframeValid && isCommonNightsValid ? 'var(--el-color-success)' : 'var(--el-color-danger)'">
@@ -270,7 +313,7 @@ async function copyMarkup() {
                     <NightsSelector v-model="commonNightsSelected" auto-apply />
                 </el-collapse-item>
 
-                <el-collapse-item name="interface-options">
+                <el-collapse-item name="interface-options" v-loading="isPullingMetadata">
                     <template #title>
                         <el-icon size="large" :color="isInterfaceOptionsValid ? 'var(--el-color-success)' : 'var(--el-color-danger)'">
                             <CircleCheckFilled v-if="isInterfaceOptionsValid" />

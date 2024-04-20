@@ -125,6 +125,19 @@ function isActiveSheetEmpty() {
     return SpreadsheetApp.getActiveSheet().getDataRange().isBlank();
 }
 
+function pullMetadata() {
+    const activeSheet = SpreadsheetApp.getActiveSheet();
+    const sheetMeta = activeSheet.getDeveloperMetadata()?.at(0);
+    return sheetMeta && JSON.parse(sheetMeta.getValue());
+}
+
+function pushMetadata(meta) {
+    const activeSheet = SpreadsheetApp.getActiveSheet();
+    const sheetMeta = activeSheet.getDeveloperMetadata()?.at(0);
+    sheetMeta?.remove();
+    activeSheet.addDeveloperMetadata('setup', typeof meta === 'object' ? JSON.stringify(meta) : meta);
+}
+
 function initActiveSheet() {
     const sheet = SpreadsheetApp.getActiveSheet();
 

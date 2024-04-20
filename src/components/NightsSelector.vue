@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, watchEffect } from "vue";
+import { computed, reactive, watchEffect, watch } from "vue";
 
 const props = defineProps({
     modelValue:      Array,
@@ -24,6 +24,11 @@ const nightsOptions = reactive(Array.from((function* () {
     }
 }())));
 
+watch(() => props.modelValue, (newValues) => {
+    selectionSet.clear();
+    nightsOptions.filter(night => newValues.includes(night.value)).forEach(night => selectionSet.add(night));
+});
+
 function handleNightClick(night) {
     if (selectionSet.has(night)) {
         selectionSet.delete(night);
@@ -33,17 +38,18 @@ function handleNightClick(night) {
             selectionSet.delete([...selectionSet][0]);
         }
     }
+    props.autoApply && updateModelValue();
 }
 
 function updateModelValue() {
     emit('update:modelValue', [...selectionSet].map(n => n.value));
 }
 
-watchEffect(() => {
-    if (props.autoApply) {
-        emit('update:modelValue', [...selectionSet].map(n => n.value));
-    }
-});
+// watchEffect(() => {
+//     if (props.autoApply) {
+//         emit('update:modelValue', [...selectionSet].map(n => n.value));
+//     }
+// });
 
 function apply() {
     updateModelValue();
