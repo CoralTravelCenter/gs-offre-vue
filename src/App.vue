@@ -57,6 +57,7 @@ watchEffect(async () => {
             if (sheetMeta.commonUsePreferRegion !== undefined) commonUsePreferRegion.value = sheetMeta.commonUsePreferRegion;
             if (sheetMeta.commonPreferRegion) commonPreferRegion.value = sheetMeta.commonPreferRegion;
             if (sheetMeta.commonOfferPrice) commonOfferPrice.value = sheetMeta.commonOfferPrice;
+            if (sheetMeta.commonSortBy) commonSortBy.value = sheetMeta.commonSortBy;
         }
     }
 });
@@ -161,7 +162,7 @@ const commonAllOffersButtonLabel = ref('Все отели');
 const commonUsePreferRegion = ref(false);
 const commonPreferRegion = ref();
 const commonOfferPrice = ref('');
-
+const commonSortBy = ref('price');
 
 const commonTimeframe = ref(null);
 const isCommonTimeframeValid = ref();
@@ -215,6 +216,9 @@ async function copyMarkup() {
         if (commonOfferPrice.value) {
             setup_data.options.pricing = commonOfferPrice.value;
         }
+        if (commonSortBy.value) {
+            setup_data.options.sortBy = commonSortBy.value;
+        }
 
         setup_data.hotels = hotels_collection.map(hotel => {
             if (Object.keys(omit(hotel, 'id')).length === 0) {
@@ -264,7 +268,8 @@ async function copyMarkup() {
             commonAllOffersButtonLabel: commonAllOffersButtonLabel.value,
             commonUsePreferRegion: commonUsePreferRegion.value,
             commonPreferRegion: commonPreferRegion.value,
-            commonOfferPrice: commonOfferPrice.value
+            commonOfferPrice: commonOfferPrice.value,
+            commonSortBy: commonSortBy.value
         };
         console.log('### pushMetadata: %o', meta_object);
         await gas('pushMetadata', meta_object);
@@ -350,6 +355,15 @@ async function copyMarkup() {
                                     <el-option label="as is" value=""></el-option>
                                     <el-option label="per night" value="per-night"></el-option>
                                     <el-option label="per person" value="per-person"></el-option>
+                                </el-select>
+                            </template>
+                        </el-input>
+                        <el-input class="location-grouping-combo" type="text" size="small">
+                            <template #prepend>Sort offers by</template>
+                            <template #append>
+                                <el-select v-model="commonSortBy" size="small">
+                                    <el-option label="price" value="price"></el-option>
+                                    <el-option label="source order" value="source"></el-option>
                                 </el-select>
                             </template>
                         </el-input>
